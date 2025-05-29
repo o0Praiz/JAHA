@@ -1,0 +1,490 @@
+# JAH Agency - Docker Compose Configuration
+# ==========================================
+#
+# This Docker Compose file defines the complete JAH Agency infrastructure
+# including the main application, databases, caching, and monitoring services.
+#
+# Usage:
+#   docker-compose up -d                    # Start all services in background
+#   docker-compose up jah-agency            # Start only the main application
+#   docker-compose logs -f jah-agency       # Follow application logs
+#   docker-compose down                     # Stop all services
+#   docker-compose down -v                  # Stop and remove volumes
+#
+# Environments:
+#   - development: Full stack with debug tools
+#   - production: Optimized for production deployment
+#   - testing: Lightweight setup for testing
+
+version: '3.8'
+
+# Shared configuration
+x-common-variables: &common-variables
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  TZ: ${TIMEZONE:-UTC}
+
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+# Services
+services:
+  # ===================
+  # JAH Agency Main Application
+  # ===================
+  jah-agency:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+        BUILD_ENV: ${ENVIRONMENT:-production}
+    container_name: jah-agency-app
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${APP_PORT:-8000}:8000"
+      - "${METRICS_PORT:-8090}:8090"  # Prometheus metrics
+    environment:
+      <<: *common-variables
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-jah_agency}
+      DB_USERNAME: ${DB_USERNAME:-jah_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      
+      # MongoDB (optional)
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-jah_agency_docs}
+      
+      # Security
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key}
+      MASTER_ENCRYPTION_KEY: ${MASTER_ENCRYPTION_KEY:-}
+      
+      # External APIs
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      
+      # Financial APIs
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      
+      # Freelancing Platforms
+      UPWORK_API_KEY: ${UPWORK_API_KEY:-}
+      UPWORK_SECRET_KEY: ${UPWORK_SECRET_KEY:-}
+      
+      # Monitoring
+      PROMETHEUS_ENABLED: true
+      PROMETHEUS_PORT: 8090
+      
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./backups:/app/backups
+      - app-temp:/app/temp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - jah-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===================
+  # Database Services
+  # ===================
+  
+  # PostgreSQL - Primary Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: jah-agency-postgres
+    <<: *restart-policy
+    <<: *default-logging
+    environment:
+      POSTGRES_DB: ${DB_NAME:-jah_agency}
+      POSTGRES_USER: ${DB_USERNAME:-jah_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backups:/backups
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - jah-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-jah_user} -d ${DB_NAME:-jah_agency}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres -c max_connections=200
+               -c shared_buffers=256MB
+               -c effective_cache_size=1GB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.9
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+               -c random_page_cost=1.1
+
+  # Redis - Caching and Message Queue
+  redis:
+    image: redis:7-alpine
+    container_name: jah-agency-redis
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - jah-network
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    sysctls:
+      - net.core.somaxconn=65535
+
+  # MongoDB - Document Storage (Optional)
+  mongo:
+    image: mongo:7
+    container_name: jah-agency-mongo
+    <<: *restart-policy
+    <<: *default-logging
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-mongo_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongo_password}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-jah_agency_docs}
+    volumes:
+      - mongo-data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    networks:
+      - jah-network
+    profiles:
+      - full
+      - mongodb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ===================
+  # Monitoring & Observability
+  # ===================
+  
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: jah-agency-prometheus
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks:
+      - jah-network
+    profiles:
+      - monitoring
+      - full
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+
+  # Grafana - Metrics Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jah-agency-grafana
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_USERS_ALLOW_ORG_CREATE: false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - jah-network
+    profiles:
+      - monitoring
+      - full
+    depends_on:
+      - prometheus
+
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jah-agency-jaeger
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${JAEGER_COLLECTOR_PORT:-14268}:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    volumes:
+      - jaeger-data:/tmp
+    networks:
+      - jah-network
+    profiles:
+      - monitoring
+      - tracing
+      - full
+
+  # ===================
+  # Message Queue & Task Processing
+  # ===================
+  
+  # Celery Worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: jah-agency-celery-worker
+    <<: *restart-policy
+    <<: *default-logging
+    environment:
+      <<: *common-variables
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_HOST: postgres
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - jah-network
+    profiles:
+      - celery
+      - full
+    command: celery -A jah_agency.celery worker --loglevel=info --concurrency=4
+
+  # Celery Beat - Scheduler
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: scheduler
+    container_name: jah-agency-celery-beat
+    <<: *restart-policy
+    <<: *default-logging
+    environment:
+      <<: *common-variables
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_HOST: postgres
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - celery-beat-data:/app/celerybeat-schedule
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - jah-network
+    profiles:
+      - celery
+      - full
+    command: celery -A jah_agency.celery beat --loglevel=info --pidfile=/tmp/celerybeat.pid
+
+  # Flower - Celery Monitoring
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: flower
+    container_name: jah-agency-flower
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      FLOWER_PORT: 5555
+    depends_on:
+      - redis
+    networks:
+      - jah-network
+    profiles:
+      - celery
+      - monitoring
+      - full
+    command: celery -A jah_agency.celery flower --port=5555
+
+  # ===================
+  # Development Tools
+  # ===================
+  
+  # pgAdmin - Database Administration
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: jah-agency-pgadmin
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${PGADMIN_PORT:-8080}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@jahagency.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - jah-network
+    profiles:
+      - development
+      - tools
+    depends_on:
+      - postgres
+
+  # Redis Commander - Redis Administration
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: jah-agency-redis-commander
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-admin123}
+    networks:
+      - jah-network
+    profiles:
+      - development
+      - tools
+    depends_on:
+      - redis
+
+  # Mailhog - Email Testing (Development)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: jah-agency-mailhog
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${MAILHOG_WEB_PORT:-8025}:8025"  # Web UI
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP
+    networks:
+      - jah-network
+    profiles:
+      - development
+      - testing
+
+  # ===================
+  # Load Balancer & Reverse Proxy
+  # ===================
+  
+  # Nginx - Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: jah-agency-nginx
+    <<: *restart-policy
+    <<: *default-logging
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - jah-network
+    profiles:
+      - production
+      - nginx
+    depends_on:
+      - jah-agency
+
+# ===================
+# Networks
+# ===================
+networks:
+  jah-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ===================
+# Volumes
+# ===================
+volumes:
+  # Application data
+  app-temp:
+    driver: local
+  
+  # Database volumes
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  mongo-data:
+    driver: local
+  
+  # Monitoring volumes
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  jaeger-data:
+    driver: local
+  
+  # Task processing
+  celery-beat-data:
+    driver: local
+  
+  # Development tools
+  pgadmin-data:
+    driver: local
+  
+  # Nginx
+  nginx-logs:
+    driver: local

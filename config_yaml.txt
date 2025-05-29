@@ -1,0 +1,597 @@
+# JAH Agency Configuration Template
+# ================================
+# 
+# This configuration file controls all aspects of the JAH Agency system.
+# Copy this file to config/config.yaml and customize for your environment.
+#
+# Environment Variables:
+# - Use ${ENV_VAR_NAME} syntax to reference environment variables
+# - Use ${ENV_VAR_NAME:default_value} to provide defaults
+#
+# Security Note: Never commit sensitive credentials to version control.
+# Use environment variables or separate credential files.
+
+# System Information
+system:
+  name: "JAH Agency"
+  version: "2.0.0"
+  environment: ${ENVIRONMENT:development}  # development, staging, production
+  debug_mode: ${DEBUG_MODE:false}
+  operation_cycle_seconds: ${OPERATION_CYCLE:60}
+  timezone: ${TIMEZONE:UTC}
+
+# Database Configuration
+database:
+  # Primary Database (PostgreSQL recommended for production)
+  primary:
+    type: ${DB_TYPE:postgresql}
+    host: ${DB_HOST:localhost}
+    port: ${DB_PORT:5432}
+    name: ${DB_NAME:jah_agency}
+    username: ${DB_USERNAME:jah_user}
+    password: ${DB_PASSWORD:secure_password}
+    pool_size: ${DB_POOL_SIZE:20}
+    max_overflow: ${DB_MAX_OVERFLOW:30}
+    pool_timeout: ${DB_POOL_TIMEOUT:30}
+    ssl_mode: ${DB_SSL_MODE:prefer}
+    
+  # Redis for Caching and Message Queue
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DB:0}
+    max_connections: ${REDIS_MAX_CONNECTIONS:50}
+    socket_timeout: ${REDIS_SOCKET_TIMEOUT:30}
+    
+  # MongoDB for Document Storage (optional)
+  mongodb:
+    enabled: ${MONGODB_ENABLED:false}
+    uri: ${MONGODB_URI:mongodb://localhost:27017}
+    database: ${MONGODB_DATABASE:jah_agency_docs}
+
+# Security Configuration
+security:
+  # Encryption
+  encryption:
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+    master_key: ${MASTER_ENCRYPTION_KEY:}
+    
+  # API Security
+  api:
+    jwt_secret: ${JWT_SECRET:your-super-secret-jwt-key}
+    jwt_expiration_hours: ${JWT_EXPIRATION:24}
+    rate_limit_per_minute: ${RATE_LIMIT:100}
+    cors_origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:8080}
+    
+  # Authentication
+  authentication:
+    method: ${AUTH_METHOD:jwt}  # jwt, oauth2, api_key
+    oauth2:
+      provider: ${OAUTH2_PROVIDER:}
+      client_id: ${OAUTH2_CLIENT_ID:}
+      client_secret: ${OAUTH2_CLIENT_SECRET:}
+      
+  # Access Control
+  access_control:
+    admin_users: ${ADMIN_USERS:admin@jahagency.com}
+    readonly_users: ${READONLY_USERS:}
+    
+# Primary JAH Agent Configuration
+primary_agent:
+  name: "JAH-CEO-Agent"
+  model: ${PRIMARY_AGENT_MODEL:gpt-4-turbo}
+  temperature: 0.1
+  max_tokens: 4000
+  decision_making:
+    confidence_threshold: 0.8
+    risk_tolerance: 0.3
+    approval_required_threshold: 10000  # USD amount requiring human approval
+    
+  # Agent Personality & Goals
+  personality:
+    leadership_style: "strategic"
+    risk_profile: "calculated"
+    communication_style: "professional"
+    
+  goals:
+    primary: "Maximize autonomous revenue generation"
+    secondary: 
+      - "Maintain operational efficiency"
+      - "Ensure quality standards"
+      - "Minimize operational costs"
+      
+  # Decision Making Rules
+  decision_rules:
+    financial:
+      max_single_expense: 5000  # USD
+      max_daily_spend: 1000     # USD
+      profit_margin_target: 0.25
+      
+    operational:
+      max_concurrent_projects: 10
+      quality_score_minimum: 85
+      client_satisfaction_minimum: 90
+      
+  # Learning & Adaptation
+  learning:
+    enabled: true
+    feedback_integration: true
+    performance_tracking: true
+    model_updates: "weekly"
+
+# Specialized Agents Configuration
+specialized_agents:
+  # Agent Pool Configuration
+  pool:
+    initial_size: 5
+    max_size: 20
+    scale_up_threshold: 0.8  # CPU utilization
+    scale_down_threshold: 0.3
+    
+  # Agent Types
+  types:
+    marketing:
+      enabled: true
+      count: 2
+      model: ${MARKETING_AGENT_MODEL:gpt-4}
+      specializations:
+        - "content_creation"
+        - "social_media_management"
+        - "seo_optimization"
+        - "campaign_management"
+      capabilities:
+        - "blog_writing"
+        - "social_posts"
+        - "ad_copy"
+        - "email_campaigns"
+        
+    sales:
+      enabled: true
+      count: 2
+      model: ${SALES_AGENT_MODEL:gpt-4}
+      specializations:
+        - "lead_generation"
+        - "client_communication"
+        - "proposal_writing"
+        - "negotiation"
+      capabilities:
+        - "cold_outreach"
+        - "proposal_creation"
+        - "client_calls"
+        - "deal_closing"
+        
+    technical:
+      enabled: true
+      count: 3
+      model: ${TECHNICAL_AGENT_MODEL:gpt-4-turbo}
+      specializations:
+        - "web_development"
+        - "data_analysis"
+        - "automation"
+        - "api_integration"
+      capabilities:
+        - "coding"
+        - "debugging"
+        - "system_design"
+        - "data_processing"
+        
+    research:
+      enabled: true
+      count: 1
+      model: ${RESEARCH_AGENT_MODEL:gpt-4}
+      specializations:
+        - "market_research"
+        - "competitor_analysis"
+        - "trend_analysis"
+        - "opportunity_identification"
+      capabilities:
+        - "web_scraping"
+        - "data_analysis"
+        - "report_generation"
+        - "insights_extraction"
+        
+    customer_service:
+      enabled: true
+      count: 2
+      model: ${CUSTOMER_SERVICE_MODEL:gpt-3.5-turbo}
+      specializations:
+        - "support_tickets"
+        - "client_communication"
+        - "issue_resolution"
+        - "satisfaction_monitoring"
+      capabilities:
+        - "ticket_handling"
+        - "chat_support"
+        - "email_support"
+        - "escalation_management"
+
+# Financial System Configuration
+financial_system:
+  # Account Configuration
+  accounts:
+    primary:
+      type: "business_checking"
+      bank: ${PRIMARY_BANK:}
+      account_number: ${PRIMARY_ACCOUNT:}
+      routing_number: ${PRIMARY_ROUTING:}
+      
+    operational:
+      type: "business_savings"
+      bank: ${OPERATIONAL_BANK:}
+      account_number: ${OPERATIONAL_ACCOUNT:}
+      routing_number: ${OPERATIONAL_ROUTING:}
+      
+  # Payment Processing
+  payment_processors:
+    stripe:
+      enabled: ${STRIPE_ENABLED:true}
+      public_key: ${STRIPE_PUBLIC_KEY:}
+      secret_key: ${STRIPE_SECRET_KEY:}
+      webhook_secret: ${STRIPE_WEBHOOK_SECRET:}
+      
+    paypal:
+      enabled: ${PAYPAL_ENABLED:false}
+      client_id: ${PAYPAL_CLIENT_ID:}
+      client_secret: ${PAYPAL_CLIENT_SECRET:}
+      environment: ${PAYPAL_ENV:sandbox}
+      
+    crypto:
+      enabled: ${CRYPTO_PAYMENTS_ENABLED:false}
+      supported_currencies: ["BTC", "ETH", "USDC"]
+      
+  # Financial Rules & Limits
+  rules:
+    daily_spend_limit: 1000      # USD
+    weekly_spend_limit: 5000     # USD
+    monthly_spend_limit: 20000   # USD
+    emergency_fund_minimum: 10000 # USD
+    
+  # Reporting
+  reporting:
+    frequency: "daily"
+    stakeholders:
+      - ${FINANCIAL_REPORT_EMAIL:admin@jahagency.com}
+    formats: ["pdf", "json", "csv"]
+    
+  # Audit & Compliance
+  audit:
+    enabled: true
+    retention_years: 7
+    automated_reconciliation: true
+
+# Revenue Generation Configuration
+revenue_generation:
+  # Market Scanning
+  market_scanning:
+    enabled: true
+    platforms:
+      upwork:
+        enabled: ${UPWORK_ENABLED:true}
+        api_key: ${UPWORK_API_KEY:}
+        secret_key: ${UPWORK_SECRET_KEY:}
+        categories: 
+          - "web-programming"
+          - "data-science-analytics"
+          - "writing"
+          - "design-creative"
+          
+      freelancer:
+        enabled: ${FREELANCER_ENABLED:true}
+        api_key: ${FREELANCER_API_KEY:}
+        secret_key: ${FREELANCER_SECRET_KEY:}
+        
+      fiverr:
+        enabled: ${FIVERR_ENABLED:false}
+        api_key: ${FIVERR_API_KEY:}
+        
+    scanning_frequency: ${MARKET_SCAN_FREQUENCY:300}  # seconds
+    
+  # Opportunity Evaluation
+  opportunity_evaluation:
+    min_project_value: 500       # USD
+    max_project_value: 50000     # USD
+    preferred_project_types:
+      - "web_development"
+      - "data_analysis"
+      - "content_creation"
+      - "automation"
+      
+    rejection_criteria:
+      - "adult_content"
+      - "gambling"
+      - "illegal_activities"
+      - "political_campaigns"
+      
+  # Client Acquisition
+  client_acquisition:
+    auto_bidding: ${AUTO_BIDDING_ENABLED:true}
+    bid_aggressiveness: 0.7      # 0.0 to 1.0
+    max_bids_per_day: 20
+    proposal_templates: true
+    
+  # Service Offerings
+  services:
+    web_development:
+      enabled: true
+      hourly_rate: ${WEB_DEV_RATE:75}
+      project_rate_multiplier: 1.2
+      
+    data_analysis:
+      enabled: true
+      hourly_rate: ${DATA_ANALYSIS_RATE:85}
+      project_rate_multiplier: 1.3
+      
+    content_creation:
+      enabled: true
+      hourly_rate: ${CONTENT_RATE:45}
+      project_rate_multiplier: 1.1
+      
+    automation:
+      enabled: true
+      hourly_rate: ${AUTOMATION_RATE:95}
+      project_rate_multiplier: 1.4
+
+# Task Distribution Configuration
+task_distribution:
+  # Queue Management
+  queue:
+    max_size: 1000
+    priority_levels: 4
+    timeout_seconds: 3600
+    
+  # Load Balancing
+  load_balancing:
+    algorithm: "weighted_round_robin"  # round_robin, least_connections, weighted_round_robin
+    health_check_interval: 30
+    
+  # Task Routing
+  routing:
+    rules:
+      - type: "marketing"
+        agents: ["marketing"]
+        priority_boost: 0
+        
+      - type: "development"
+        agents: ["technical"]
+        priority_boost: 1
+        
+      - type: "sales"
+        agents: ["sales"]
+        priority_boost: 2
+        
+  # Performance Monitoring
+  monitoring:
+    enabled: true
+    metrics_retention_days: 30
+    alert_thresholds:
+      queue_size: 100
+      average_wait_time: 300
+      failed_task_rate: 0.05
+
+# Communication Framework Configuration
+communication:
+  # Message Queue
+  message_queue:
+    type: "redis"  # redis, rabbitmq, kafka
+    max_retries: 3
+    retry_delay: 5
+    dead_letter_queue: true
+    
+  # Inter-Agent Communication
+  inter_agent:
+    protocol: "websocket"
+    heartbeat_interval: 30
+    connection_timeout: 60
+    
+  # External Integrations
+  external:
+    slack:
+      enabled: ${SLACK_ENABLED:false}
+      bot_token: ${SLACK_BOT_TOKEN:}
+      channel: ${SLACK_CHANNEL:#jah-agency}
+      
+    discord:
+      enabled: ${DISCORD_ENABLED:false}
+      bot_token: ${DISCORD_BOT_TOKEN:}
+      guild_id: ${DISCORD_GUILD_ID:}
+      
+    email:
+      enabled: ${EMAIL_ENABLED:true}
+      smtp_host: ${SMTP_HOST:smtp.gmail.com}
+      smtp_port: ${SMTP_PORT:587}
+      username: ${EMAIL_USERNAME:}
+      password: ${EMAIL_PASSWORD:}
+      from_address: ${EMAIL_FROM:noreply@jahagency.com}
+      
+  # Webhooks
+  webhooks:
+    enabled: true
+    endpoints:
+      - name: "financial_alerts"
+        url: ${FINANCIAL_WEBHOOK_URL:}
+        events: ["transaction", "budget_alert"]
+        
+      - name: "task_completion"
+        url: ${TASK_WEBHOOK_URL:}
+        events: ["task_completed", "task_failed"]
+
+# Quality Assurance Configuration
+quality_assurance:
+  # Performance Monitoring
+  monitoring:
+    enabled: true
+    metrics:
+      - "response_time"
+      - "success_rate"
+      - "error_rate"
+      - "throughput"
+      - "resource_utilization"
+      
+    thresholds:
+      response_time_ms: 5000
+      success_rate_percent: 95
+      error_rate_percent: 5
+      cpu_utilization_percent: 80
+      memory_utilization_percent: 85
+      
+  # Quality Control
+  quality_control:
+    enabled: true
+    review_percentage: 10  # Percentage of work to review
+    automated_testing: true
+    human_review_threshold: 95  # Quality score threshold for human review
+    
+  # Continuous Improvement
+  improvement:
+    enabled: true
+    learning_rate: 0.01
+    feedback_integration: true
+    model_retraining: "weekly"
+    
+  # Alerting
+  alerting:
+    enabled: true
+    channels: ["email", "slack"]
+    severity_levels:
+      critical: 
+        response_time: 5  # minutes
+        escalation_time: 15
+      high:
+        response_time: 30
+        escalation_time: 60
+      medium:
+        response_time: 120
+        escalation_time: 240
+
+# External API Configuration
+external_apis:
+  # AI/ML Services
+  openai:
+    api_key: ${OPENAI_API_KEY:}
+    organization: ${OPENAI_ORG_ID:}
+    rate_limit_requests_per_minute: 3500
+    
+  anthropic:
+    api_key: ${ANTHROPIC_API_KEY:}
+    rate_limit_requests_per_minute: 1000
+    
+  # Web Services
+  web_scraping:
+    user_agent: "JAH-Agency-Bot/2.0"
+    delay_between_requests: 1
+    max_concurrent_requests: 5
+    respect_robots_txt: true
+    
+  # Business Intelligence
+  google_analytics:
+    enabled: ${GA_ENABLED:false}
+    tracking_id: ${GA_TRACKING_ID:}
+    service_account_key: ${GA_SERVICE_ACCOUNT_KEY:}
+    
+  crunchbase:
+    enabled: ${CRUNCHBASE_ENABLED:false}
+    api_key: ${CRUNCHBASE_API_KEY:}
+
+# Logging Configuration
+logging:
+  level: ${LOG_LEVEL:INFO}
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s - [%(filename)s:%(lineno)d]"
+  
+  handlers:
+    console:
+      enabled: true
+      level: INFO
+      
+    file:
+      enabled: true
+      level: DEBUG
+      max_bytes: 10485760  # 10MB
+      backup_count: 5
+      
+    error_file:
+      enabled: true
+      level: ERROR
+      max_bytes: 10485760
+      backup_count: 10
+      
+  loggers:
+    "JAHAgency":
+      level: INFO
+    "JAHAgency.Financial":
+      level: INFO
+    "JAHAgency.Revenue":
+      level: INFO
+    "JAHAgency.Agents":
+      level: DEBUG
+
+# Monitoring & Observability
+monitoring:
+  # Health Checks
+  health_checks:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 10
+    
+  # Metrics Collection
+  metrics:
+    enabled: true
+    collection_interval: 60
+    retention_days: 90
+    
+    # Prometheus Integration
+    prometheus:
+      enabled: ${PROMETHEUS_ENABLED:false}
+      port: ${PROMETHEUS_PORT:8090}
+      path: "/metrics"
+      
+  # Distributed Tracing
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    service_name: "jah-agency"
+    jaeger_endpoint: ${JAEGER_ENDPOINT:http://localhost:14268}
+
+# Backup & Recovery
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 30
+  
+  storage:
+    type: ${BACKUP_STORAGE_TYPE:local}  # local, s3, gcs, azure
+    path: ${BACKUP_PATH:/backups}
+    
+    # AWS S3
+    s3:
+      bucket: ${S3_BACKUP_BUCKET:}
+      access_key: ${AWS_ACCESS_KEY:}
+      secret_key: ${AWS_SECRET_KEY:}
+      region: ${AWS_REGION:us-east-1}
+      
+  components:
+    - "database"
+    - "configuration"
+    - "logs"
+    - "financial_records"
+
+# Development & Testing
+development:
+  debug_mode: ${DEBUG_MODE:false}
+  hot_reload: ${HOT_RELOAD:false}
+  mock_external_apis: ${MOCK_APIS:false}
+  
+  testing:
+    enabled: true
+    test_data_reset: true
+    parallel_tests: true
+    coverage_threshold: 80
+
+# Feature Flags
+features:
+  autonomous_bidding: ${FEATURE_AUTO_BIDDING:true}
+  ai_enhanced_proposals: ${FEATURE_AI_PROPOSALS:true}
+  predictive_analytics: ${FEATURE_PREDICTIVE:true}
+  multi_language_support: ${FEATURE_MULTILANG:false}
+  blockchain_integration: ${FEATURE_BLOCKCHAIN:false}
+  advanced_ml_models: ${FEATURE_ADVANCED_ML:true}

@@ -1,0 +1,256 @@
+# JAH Agency - Python Dependencies
+# =================================
+#
+# Core application dependencies for the JAH Agency autonomous AI system.
+# Install with: pip install -r requirements.txt
+#
+# For development dependencies, see requirements-dev.txt
+# For production optimizations, see requirements-prod.txt
+
+# Core Framework & Async Support
+asyncio-throttle==1.0.2
+asyncpg==0.29.0
+aiohttp==3.9.1
+aiofiles==23.2.1
+uvloop==0.19.0  # High-performance event loop for Linux/macOS
+
+# Web Framework & API
+fastapi==0.108.0
+uvicorn[standard]==0.25.0
+starlette==0.32.0
+pydantic[email]==2.5.2
+python-multipart==0.0.6
+
+# Database & ORM
+sqlalchemy[asyncio]==2.0.25
+alembic==1.13.1
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Caching & Message Queue
+redis[hiredis]==5.0.1
+aioredis==2.0.1
+celery[redis]==5.3.4
+kombu==5.3.4
+
+# Document Database (Optional)
+pymongo==4.6.1
+motor==3.3.2
+
+# Configuration Management
+pyyaml==6.0.1
+python-dotenv==1.0.0
+pydantic-settings==2.1.0
+configparser==6.0.0
+
+# Logging & Monitoring
+structlog==23.2.0
+colorlog==6.8.0
+prometheus-client==0.19.0
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+opentelemetry-instrumentation==0.43b0
+
+# Security & Authentication
+cryptography==41.0.8
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+authlib==1.3.0
+pyjwt==2.8.0
+
+# AI & Machine Learning
+openai==1.6.1
+anthropic==0.8.1
+langchain==0.1.0
+langchain-openai==0.0.2
+langchain-community==0.0.10
+transformers==4.36.2
+torch==2.1.2
+numpy==1.26.2
+scikit-learn==1.3.2
+pandas==2.1.4
+
+# Web Scraping & HTTP Clients
+requests==2.31.0
+httpx==0.26.0
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+selenium==4.16.0
+scrapy==2.11.0
+playwright==1.40.0
+
+# Data Processing & Analysis
+pandas==2.1.4
+numpy==1.26.2
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.17.0
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+
+# Financial & Payment Processing
+stripe==7.9.0
+paypal-checkout-serversdk==1.0.1
+ccxt==4.1.74  # Cryptocurrency exchange library
+yfinance==0.2.28  # Yahoo Finance data
+
+# Email & Communication
+emails==0.6
+sendgrid==6.11.0
+twilio==8.12.0
+slack-sdk==3.26.2
+discord.py==2.3.2
+
+# Task Queue & Scheduling
+celery[redis]==5.3.4
+apscheduler==3.10.4
+rq==1.15.1
+dramatiq[redis]==1.15.0
+
+# File Processing & Storage
+pillow==10.1.0
+python-magic==0.4.27
+boto3==1.34.0  # AWS SDK
+google-cloud-storage==2.10.0  # Google Cloud Storage
+azure-storage-blob==12.19.0  # Azure Blob Storage
+
+# Testing & Development
+pytest==7.4.3
+pytest-asyncio==0.23.2
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+httpx==0.26.0  # For testing async HTTP clients
+factory-boy==3.3.0  # Test data generation
+
+# Code Quality & Formatting
+black==23.12.0
+isort==5.13.2
+flake8==6.1.0
+mypy==1.8.0
+bandit==1.7.5  # Security linting
+pre-commit==3.6.0
+
+# Documentation
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+mkdocs==1.5.3
+mkdocs-material==9.5.3
+
+# Utilities & Helpers
+click==8.1.7  # CLI framework
+rich==13.7.0  # Rich terminal output
+typer==0.9.0  # Modern CLI framework
+python-dateutil==2.8.2
+pytz==2023.3.post1
+crontab==1.0.1
+python-crontab==3.0.0
+
+# Validation & Serialization
+marshmallow==3.20.2
+cerberus==1.3.5
+jsonschema==4.20.0
+
+# HTTP & API Clients
+httpx==0.26.0
+requests-oauthlib==1.3.1
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+
+# Background Processing
+dramatiq[redis]==1.15.0
+rq==1.15.1
+huey[redis]==2.5.0
+
+# Performance & Optimization
+orjson==3.9.10  # Fast JSON serialization
+ujson==5.9.0    # Alternative fast JSON
+msgpack==1.0.7  # Binary serialization
+
+# Network & Protocols
+websockets==12.0
+aiosmtplib==3.0.1
+paramiko==3.4.0  # SSH client
+ftputil==5.0.4   # FTP utilities
+
+# System & OS Integration
+psutil==5.9.6    # System monitoring
+watchdog==3.0.0  # File system monitoring
+schedule==1.2.1  # Simple job scheduling
+
+# Version Pinning for Stability
+# ==============================
+# These versions are tested and known to work well together
+setuptools>=65.0.0
+wheel>=0.38.0
+pip>=23.0.0
+
+# Optional Dependencies for Enhanced Features
+# ===========================================
+
+# Machine Learning Extras (uncomment if needed)
+# tensorflow==2.15.0
+# pytorch-lightning==2.1.3
+# xgboost==2.0.2
+# lightgbm==4.1.0
+
+# Computer Vision (uncomment if needed)
+# opencv-python==4.8.1.78
+# pytesseract==0.3.10
+
+# Natural Language Processing (uncomment if needed)
+# spacy==3.7.2
+# nltk==3.8.1
+# textblob==0.17.1
+
+# Time Series Analysis (uncomment if needed)
+# prophet==1.1.5
+# statsmodels==0.14.1
+
+# Blockchain & Crypto (uncomment if needed)
+# web3==6.15.1
+# eth-account==0.10.0
+# bitcoin==1.1.42
+
+# Advanced Analytics (uncomment if needed)
+# jupyter==1.0.0
+# ipython==8.18.1
+# notebook==7.0.6
+
+# Production Optimizations
+# ========================
+# These packages provide performance improvements in production
+
+# ASGI Server with better performance
+gunicorn==21.2.0
+gevent==23.9.1
+
+# Memory profiling & optimization
+memory-profiler==0.61.0
+pympler==0.9
+
+# Caching backends
+python-memcached==1.62
+pylibmc==1.6.3
+
+# Database connection pooling
+sqlalchemy-pool==2.0.25
+
+# Monitoring & APM
+# ================
+sentry-sdk[fastapi]==1.39.2  # Error tracking
+newrelic==9.2.0               # Application monitoring (optional)
+
+# Security Enhancements
+# =====================
+bleach==6.1.0         # HTML sanitization
+defusedxml==0.7.1     # Secure XML parsing
+safety==2.3.5         # Dependency vulnerability checking
+
+# Development Tools (for development environment)
+# ===============================================
+# Uncomment these for development installations:
+# jupyter==1.0.0
+# ipdb==0.13.13
+# pytest-xdist==3.5.0  # Parallel testing
+# pytest-benchmark==4.0.0  # Performance testing
+# locust==2.20.0  # Load testing
